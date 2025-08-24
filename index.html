@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova - دستیار هوشمند متصل به Ollama</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-bg: rgba(10, 10, 20, 0.85);
+            --secondary-bg: rgba(30, 30, 50, 0.7);
+            --accent-color: #a378ff;
+            --accent-gradient: linear-gradient(135deg, #a378ff, #5d34a3);
+            --text-primary: #f0f0f0;
+            --text-secondary: #c0c0c0;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+            --success: #00c896;
+            --warning: #ff9f43;
+            --danger: #ff6b6b;
+            --web-source: #ff9f43;
+            --upload-source: #00c896;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', 'Segoe UI', Tahoma, sans-serif;
+        }
+
+        body {
+            background: url('https://images.unsplash.com/photo-1531297484001-80022131f5a1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1820&q=80') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: -1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            background: var(--primary-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            background: var(--accent-gradient);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 28px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .api-config {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--secondary-bg);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .api-input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 5px 10px;
+            width: 200px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .api-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: var(--primary-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            font-size: 20px;
+        }
+
+        .model-selector {
+            width: 100%;
+            padding: 10px;
+            background: var(--secondary-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+
+        .model-selector:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .subject-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .subject-item {
+            padding: 12px 15px;
+            background: var(--secondary-bg);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subject-item:hover {
+            background: rgba(163, 120, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        .subject-item.active {
+            background: rgba(163, 120, 255, 0.3);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .subject-icon {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--primary-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .chat-info h2 {
+            font-size: 20px;
+        }
+
+        .chat-info p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-height: 500px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 15px;
+            border-radius: 18px;
+            line-height: 1.6;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--secondary-bg);
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background: rgba(93, 52, 163, 0.3);
+            border-bottom-left-radius: 5px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .message-content {
+            font-size: 15px;
+        }
+
+        .chat-input {
+            padding: 20px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            gap: 15px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px;
+            background: var(--secondary-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            color: var(--text-primary);
+            font-size: 15px;
+            resize: none;
+            min-height: 60px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .send-button {
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 15px;
+            width: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(163, 120, 255, 0.5);
+        }
+
+        .upload-section {
+            margin-top: 10px;
+            padding: 15px;
+            background: var(--secondary-bg);
+            border-radius: 15px;
+            border: 2px dashed var(--glass-border);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: var(--accent-color);
+            background: rgba(163, 120, 255, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .status-online {
+            background-color: var(--success);
+        }
+
+        .status-offline {
+            background-color: var(--text-secondary);
+        }
+
+        .suggested-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .question-chip {
+            background: rgba(163, 120, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 18px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .question-chip:hover {
+            background: rgba(163, 120, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .connected {
+            background-color: rgba(0, 200, 150, 0.2);
+            color: var(--success);
+        }
+
+        .disconnected {
+            background-color: rgba(255, 107, 107, 0.2);
+            color: var(--danger);
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .logo {
+                justify-content: center;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+
+            .api-config {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .api-input {
+                width: 150px;
+            }
+        }
+
+        /* انیمیشن‌ها */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* اسکرول بار سفارشی */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8a6cff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Nova AI</h1>
+                    <span class="subtitle">دستیار هوشمند متصل به Ollama</span>
+                </div>
+            </div>
+            <div class="api-config">
+                <input type="text" class="api-input" id="apiUrlInput" placeholder="آدرس API Ollama" value="http://localhost:11434">
+                <div class="connection-status" id="connectionStatus">
+                    <i class="fas fa-plug"></i>
+                    <span>متصل نشده</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div>
+                    <h3 class="section-title"><i class="fas fa-cog"></i> پیکربندی مدل</h3>
+                    <select class="model-selector" id="modelSelector">
+                        <option value="llama2">Llama 2</option>
+                        <option value="mistral">Mistral</option>
+                        <option value="gemma">Gemma</option>
+                        <option value="phi">Phi-2</option>
+                        <option value="qwen">Qwen</option>
+                    </select>
+                    
+                    <div class="connection-status disconnected" id="modelStatus">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>مدل بارگذاری نشده</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="section-title"><i class="fas fa-lightbulb"></i> سوالات نمونه</h3>
+                    <div class="suggested-questions">
+                        <div class="question-chip" data-question="روش تدریس مفهوم کسر در ریاضی">روش تدریس کسر</div>
+                        <div class="question-chip" data-question="جدول برنامه هفتگی کلاس ششم">برنامه هفتگی</div>
+                        <div class="question-chip" data-question="اهداف درس علوم تجربی ششم">اهداف علوم</div>
+                        <div class="question-chip" data-question="روش ارزشیابی درس فارسی">ارزشیابی فارسی</div>
+                    </div>
+                </div>
+
+                <div class="upload-section" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <p>برای آپلود برنامه درسی کلیک کنید</p>
+                    <input type="file" id="fileUpload" style="display: none;" accept=".txt,.pdf,.docx">
+                </div>
+
+                <div>
+                    <h3 class="section-title"><i class="fas fa-info-circle"></i> راهنما</h3>
+                    <p style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+                        برای استفاده از Nova، باید Ollama را نصب کرده و مدل مورد نظر را دانلود کنید. دستورالعمل نصب در <a href="https://ollama.ai" style="color: var(--accent-color);">وبسایت Ollama</a> موجود است.
+                    </p>
+                </div>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="chat-info">
+                        <h2>دستیار Nova</h2>
+                        <p>همراه شما در تدریس - متصل به Ollama</p>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message assistant">
+                        <div class="message-header">
+                            <i class="fas fa-robot"></i>
+                            <span>Nova</span>
+                        </div>
+                        <div class="message-content">
+                            سلام فرزانه‌خانم 🌹<br>
+                            من Nova هستم، دستیار آموزشی هوشمند شما. لطفاً ابتدا اتصال به Ollama را بررسی کنید و یک مدل انتخاب نمایید.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input">
+                    <textarea class="message-input" id="messageInput" placeholder="پیام خود را اینجا بنویسید..." rows="1"></textarea>
+                    <button class="send-button" id="sendMessage">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiUrlInput = document.getElementById('apiUrlInput');
+            const connectionStatus = document.getElementById('connectionStatus');
+            const modelSelector = document.getElementById('modelSelector');
+            const modelStatus = document.getElementById('modelStatus');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendMessage');
+            const chatMessages = document.getElementById('chatMessages');
+            const uploadArea = document.getElementById('uploadArea');
+            const fileUpload = document.getElementById('fileUpload');
+            const questionChips = document.querySelectorAll('.question-chip');
+            
+            let isConnected = false;
+            let currentModel = 'llama2';
+            
+            // بررسی اتصال به Ollama
+            async function checkConnection() {
+                const apiUrl = apiUrlInput.value;
+                try {
+                    const response = await fetch(`${apiUrl}/api/tags`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        connectionStatus.className = 'connection-status connected';
+                        connectionStatus.innerHTML = '<i class="fas fa-plug"></i><span>متصل شده</span>';
+                        isConnected = true;
+                        addMessage('assistant', 'اتصال به Ollama با موفقیت برقرار شد. حالا می‌توانید یک مدل انتخاب کنید.');
+                        return true;
+                    } else {
+                        throw new Error('Connection failed');
+                    }
+                } catch (error) {
+                    connectionStatus.className = 'connection-status disconnected';
+                    connectionStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>خطا در اتصال</span>';
+                    isConnected = false;
+                    addMessage('assistant', 'خطا در اتصال به Ollama. لطفاً از نصب و اجرای Ollama اطمینان حاصل کنید.');
+                    return false;
+                }
+            }
+            
+            // بررسی مدل انتخاب شده
+            async function checkModel() {
+                if (!isConnected) return false;
+                
+                const apiUrl = apiUrlInput.value;
+                try {
+                    const response = await fetch(`${apiUrl}/api/show`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: currentModel
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        modelStatus.className = 'connection-status connected';
+                        modelStatus.innerHTML = '<i class="fas fa-check"></i><span>مدل بارگذاری شده</span>';
+                        addMessage('assistant', `مدل ${currentModel} با موفقیت بارگذاری شد. حالا می‌توانید سوالات خود را بپرسید.`);
+                        return true;
+                    } else {
+                        throw new Error('Model not found');
+                    }
+                } catch (error) {
+                    modelStatus.className = 'connection-status disconnected';
+                    modelStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>مدل یافت نشد</span>';
+                    addMessage('assistant', `مدل ${currentModel} یافت نشد. لطفاً مدل را با دستور 'ollama pull ${currentModel}' دانلود کنید.`);
+                    return false;
+                }
+            }
+            
+            // ارسال درخواست به Ollama
+            async function sendToOllama(message) {
+                if (!isConnected) {
+                    addMessage('assistant', 'لطفاً ابتدا اتصال به Ollama را بررسی کنید.');
+                    return;
+                }
+                
+                const apiUrl = apiUrlInput.value;
+                
+                // نمایش نشانگر در حال تایپ
+                const typingIndicator = document.createElement('div');
+                typingIndicator.className = 'typing-indicator';
+                typingIndicator.innerHTML = `
+                    <span>Nova در حال پاسخگویی است</span>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                `;
+                chatMessages.appendChild(typingIndicator);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                try {
+                    const response = await fetch(`${apiUrl}/api/generate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: currentModel,
+                            prompt: `You are Nova, a Farsi teaching assistant for Farzaneh. Answer her question in Farsi: ${message}`,
+                            stream: false
+                        })
+                    });
+                    
+                    // حذف نشانگر تایپ
+                    chatMessages.removeChild(typingIndicator);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        addMessage('assistant', data.response);
+                    } else {
+                        throw new Error('API request failed');
+                    }
+                } catch (error) {
+                    // حذف نشانگر تایپ
+                    chatMessages.removeChild(typingIndicator);
+                    
+                    addMessage('assistant', 'خطا در ارتباط با Ollama. لطفاً از اجرای سرویس Ollama اطمینان حاصل کنید.');
+                    console.error('Error:', error);
+                }
+            }
+            
+            // بررسی خودکار اتصال هنگام تغییر آدرس
+            apiUrlInput.addEventListener('change', checkConnection);
+            
+            // بررسی مدل هنگام تغییر
+            modelSelector.addEventListener('change', function() {
+                currentModel = this.value;
+                checkModel();
+            });
+            
+            // بررسی اولیه اتصال
+            setTimeout(checkConnection, 1000);
+            
+            // آپلود فایل
+            uploadArea.addEventListener('click', function() {
+                fileUpload.click();
+            });
+            
+            fileUpload.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    const fileName = this.files[0].name;
+                    addMessage('user', `فایل آپلود شد: ${fileName}`);
+                    addMessage('assistant', 'برنامه درسی با موفقیت آپلود شد. اکنون می‌توانم به سؤالات شما پاسخ دهم.');
+                }
+            });
+            
+            // ارسال پیام
+            sendButton.addEventListener('click', sendMessage);
+            
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // تنظیم ارتفاع خودکار برای textarea
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+            
+            // کلیک بر روی سوالات پیشنهادی
+            questionChips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    const question = this.getAttribute('data-question');
+                    messageInput.value = question;
+                    sendMessage();
+                });
+            });
+            
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message) {
+                    addMessage('user', message);
+                    messageInput.value = '';
+                    messageInput.style.height = 'auto';
+                    
+                    // ارسال به Ollama
+                    sendToOllama(message);
+                }
+            }
+            
+            function addMessage(role, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${role}`;
+                
+                const messageHeader = document.createElement('div');
+                messageHeader.className = 'message-header';
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                messageContent.textContent = content;
+                
+                if (role === 'assistant') {
+                    messageHeader.innerHTML = '<i class="fas fa-robot"></i><span>Nova</span>';
+                } else {
+                    messageHeader.innerHTML = '<i class="fas fa-user"></i><span>شما</span>';
+                }
+                
+                messageDiv.appendChild(messageHeader);
+                messageDiv.appendChild(messageContent);
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+    </script>
+
+    <!-- افزودن فونت Vazirmatn برای پشتیبانی از فارسی -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+</body>
+</html>
